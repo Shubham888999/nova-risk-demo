@@ -3,9 +3,9 @@
 A static, permanent demo of an agentic AI prototype for supply chain risk management.
 
 **Live demo:** https://shubham888999.github.io/nova-risk-demo/
-**Archived version:** [https://doi.org/10.5281/zenodo.24540378](https://doi.org/10.5281/zenodo.24540378)
+**Archived version (all versions, always the latest):** [https://doi.org/10.5281/zenodo.24540377](https://doi.org/10.5281/zenodo.24540377)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24540378.svg)](https://doi.org/10.5281/zenodo.24540378)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24540377.svg)](https://doi.org/10.5281/zenodo.24540377)
 
 ## What this is
 
@@ -52,7 +52,7 @@ This reruns the engine for every day, setting and combination, and rewrites `dat
 
 ## Citation
 
-Deshpande, S., Sarkar, P., and Gunasekaran, A. (2026). *Nova risk control panel: static demo of an agentic AI prototype for supply chain risk management* (Version 1.0.0). Zenodo. https://doi.org/10.5281/zenodo.24540378
+Deshpande, S., Sarkar, P., and Gunasekaran, A. (2026). *Nova risk control panel: static demo of an agentic AI prototype for supply chain risk management*. Zenodo. https://doi.org/10.5281/zenodo.24540377
 
 See also `CITATION.cff`.
 

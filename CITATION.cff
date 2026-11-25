@@ -9,9 +9,10 @@ authors:
     given-names: Piyal
   - family-names: Gunasekaran
     given-names: Angappa
-version: 1.0.0
-doi: 10.5281/zenodo.24540378
+version: 1.0.2
+doi: 10.5281/zenodo.24540377
 date-released: 2026-11-25
+abstract: "A static, permanent demo of an agentic AI prototype for supply chain risk management. A fictional electronics company receives news day by day, including a port strike at a key supplier. For each event the prototype reads the news, chooses a risk method (CVaR, VaR, mean variance, monitor or abstain), computes the risk with a deterministic engine, verifies the result, explains it and waits for a manager's decision. All numbers were computed in advance by the R risk engine included here, and text from the AI agents is replayed from recorded outputs. The page needs no server, language model or external service. All data is synthetic."
 license: MIT
 repository-code: "https://github.com/Shubham888999/nova-risk-demo"
 url: "https://shubham888999.github.io/nova-risk-demo/"
