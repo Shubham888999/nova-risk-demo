@@ -4,7 +4,7 @@ title: "Nova risk control panel: static demo of an agentic AI prototype for supp
 type: software
 authors:
   - family-names: Deshpande
-    given-names: Shubham
+    given-names: Shubham Vasant
   - family-names: Sarkar
     given-names: Piyal
   - family-names: Gunasekaran
@@ -12,8 +12,8 @@ authors:
 version: 1.0.0
 date-released: 2026-11-25
 license: MIT
-repository-code: "https://github.com/USERNAME/nova-risk-demo"
-url: "https://USERNAME.github.io/nova-risk-demo/"
+repository-code: "https://github.com/Shubham888999/nova-risk-demo"
+url: "https://Shubham888999.github.io/nova-risk-demo/"
 keywords:
   - supply chain risk management
   - agentic AI
