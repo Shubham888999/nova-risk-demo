@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use this demo or its code, please cite it as below."
+title: "Nova risk control panel: static demo of an agentic AI prototype for supply chain risk management"
+type: software
+authors:
+  - family-names: Deshpande
+    given-names: Shubham
+  - family-names: Sarkar
+    given-names: Piyal
+  - family-names: Gunasekaran
+    given-names: Angappa
+version: 1.0.0
+date-released: 2026-11-25
+license: MIT
+repository-code: "https://github.com/USERNAME/nova-risk-demo"
+url: "https://USERNAME.github.io/nova-risk-demo/"
+keywords:
+  - supply chain risk management
+  - agentic AI
+  - CVaR
+  - large language models
+  - decision support

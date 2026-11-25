@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nova Risk Control Panel</title>
+<meta name="description" content="Static demo of an agentic AI prototype for supply chain risk management. Synthetic data. All numbers computed in advance by the R risk engine.">
+<style>
+:root {
+  --ink: #0F2A3D; --paper: #EEF3F6; --surface: #FFFFFF; --line: #D6E0E6; --soft: #EDF2F5; --muted: #5B7083;
+  --red: #C8423B; --amber: #D98E2B; --gold: #C9A227; --green: #2E8B6A; --blue: #2563A8; --grey: #8A9BA8;
+  --steel: #9FB3C2; --radius-lg: 14px; --radius-sm: 8px;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-size: 15px; line-height: 1.45;
+  font-family: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; }
+h1, h2, h3, h4, p { margin: 0; }
+button, select { font: inherit; color: inherit; }
+.num { font-variant-numeric: tabular-nums; }
+.wrap { max-width: 1440px; margin: 0 auto; padding: 0 24px 48px; }
+.small-note { font-size: 0.82rem; color: var(--muted); }
+.ok { color: var(--green); } .bad { color: var(--red); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+/* top bar */
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 18px 0 12px; }
+.brand { font-size: 1.35rem; font-weight: 600; letter-spacing: -0.01em; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.demo-tag { font-size: 0.78rem; font-weight: 600; color: var(--ink); background: #F2C14E; padding: 2px 8px; border-radius: 3px; letter-spacing: 0; }
+.toplinks { display: flex; gap: 18px; font-size: 0.9rem; }
+.toplinks a { color: var(--muted); }
+.notice { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid #F2C14E; border-radius: var(--radius-sm);
+  padding: 10px 16px; font-size: 0.88rem; color: var(--muted); margin-bottom: 14px; max-width: 100%; }
+.notice strong { color: var(--ink); font-weight: 600; }
+
+/* ribbon */
+.ribbon { background: var(--ink); color: #E6EEF3; border-radius: var(--radius-lg); padding: 18px 20px 16px;
+  display: grid; grid-template-columns: 210px 44px 1fr 44px; gap: 14px; align-items: center; }
+.today-label { font-size: 0.85rem; color: var(--steel); }
+.today { font-size: 1.9rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+.reset { color: var(--steel); font-size: 0.85rem; text-decoration: underline; cursor: pointer; background: none; border: 0; padding: 0; }
+.step { width: 44px; height: 44px; border-radius: 50%; border: 1px solid #3C5A70; background: transparent; color: #E6EEF3;
+  font-size: 1.25rem; cursor: pointer; }
+.step:hover { background: #1D4560; } .step:disabled { opacity: 0.3; cursor: default; }
+.days { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(34px, 1fr); gap: 4px; }
+.day { background: transparent; border: 0; color: #C9D6DF; border-radius: 3px; padding: 6px 0 8px; display: flex;
+  flex-direction: column; align-items: center; gap: 2px; cursor: pointer; min-width: 0; }
+.day:hover { background: #17384F; }
+.day .month { font-size: 0.68rem; color: #F2C14E; height: 12px; }
+.day .wd { font-size: 0.7rem; color: #7F97A8; }
+.day .dn { font-size: 1.05rem; font-weight: 500; }
+.day .ticks { display: flex; gap: 3px; height: 9px; align-items: center; }
+.day .tick { width: 7px; height: 7px; border-radius: 50%; }
+.day.future { opacity: 0.35; }
+.day.current { background: #F2C14E; color: var(--ink); }
+.day.current .wd, .day.current .month { color: #5A4A12; }
+.ribbon :focus-visible { outline-color: #F2C14E; }
+
+/* panels and pipeline */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 18px 20px; min-width: 0; }
+.panel h3 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+.route-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.route-head h2 { font-size: 1.05rem; font-weight: 600; }
+select { border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; background: var(--surface); max-width: 100%; }
+.route-head select { min-width: 340px; }
+.track { position: relative; display: grid; grid-template-columns: repeat(8, 1fr); }
+.track::before { content: ""; position: absolute; left: 6%; right: 6%; top: 15px; height: 3px; background: var(--line); }
+.station { position: relative; text-align: center; padding: 0 4px; }
+.station .dot { width: 32px; height: 32px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center;
+  justify-content: center; font-size: 0.8rem; font-weight: 600; border: 3px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.station .name { font-size: 0.82rem; font-weight: 500; line-height: 1.25; }
+.station .state { font-size: 0.75rem; color: var(--muted); }
+.st-done .dot { background: var(--green); color: #fff; box-shadow: none; }
+.st-warning .dot { background: var(--amber); color: #fff; box-shadow: none; }
+.st-pending .dot { background: var(--blue); color: #fff; box-shadow: none; animation: pulse 1.8s ease-in-out infinite; }
+.st-waiting .dot, .st-skipped .dot { background: var(--paper); color: var(--muted); }
+.st-skipped .name { color: var(--muted); }
+@keyframes pulse { 50% { box-shadow: 0 0 0 7px rgba(37, 99, 168, 0.18); } }
+@media (prefers-reduced-motion: reduce) { .st-pending .dot { animation: none; } }
+.verdict { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.rec { font-weight: 600; }
+.chip { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.8rem; font-weight: 500; white-space: nowrap;
+  background: color-mix(in srgb, currentColor 13%, transparent); margin: 0 6px 4px 0; }
+.chip.solid { color: #fff !important; }
+
+/* figures */
+.figures { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 18px 0; }
+.figure { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: var(--radius-sm); padding: 14px 18px; }
+.figure .label { font-size: 0.85rem; color: var(--muted); }
+.figure .value { font-size: 2rem; font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; }
+.figure .note { font-size: 0.8rem; color: var(--muted); }
+.figure.red { border-left-color: var(--red); } .figure.green { border-left-color: var(--green); }
+.figure.blue { border-left-color: var(--blue); } .figure.amber { border-left-color: var(--amber); }
+
+/* tabs */
+.tabs { display: flex; gap: 28px; margin: 6px 0 18px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
+.tab { color: var(--muted); background: none; border: 0; border-bottom: 3px solid transparent; padding: 8px 0; margin-bottom: -1px;
+  font-weight: 500; cursor: pointer; white-space: nowrap; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+.view[hidden] { display: none; }
+.grid-2 { display: grid; grid-template-columns: 7fr 5fr; gap: 14px; }
+.grid-half { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.mb { margin-bottom: 14px; }
+.empty { color: var(--muted); padding: 24px 20px; }
+.legend { margin-top: 8px; font-size: 0.8rem; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; }
+table { border-collapse: collapse; }
+table.log { width: 100%; font-size: 0.86rem; }
+table.log th { color: var(--muted); font-weight: 500; text-align: left; border-bottom: 1px solid var(--line); padding: 6px 6px; }
+table.log td { padding: 8px 6px; border-bottom: 1px solid var(--soft); vertical-align: top; }
+table.log td.num, table.log th.num { text-align: right; }
+table.log tr.best td { font-weight: 600; background: #F4F8FB; }
+.scroll { overflow-x: auto; }
+.recorded { font-size: 0.78rem; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; }
+.recorded::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue); display: inline-block; }
+
+/* map */
+.map svg { width: 100%; height: auto; display: block; background: #F6F9FB; border-radius: var(--radius-sm); }
+
+/* news */
+.feed { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.news { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px 18px; }
+.news.ignored { opacity: 0.6; }
+.news h4 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; line-height: 1.35; }
+.news .meta { font-size: 0.8rem; color: var(--muted); margin-bottom: 10px; }
+.news p { margin: 0 0 10px; line-height: 1.55; max-width: 72ch; }
+.news mark { background: #FBE7A1; padding: 1px 2px; border-radius: 3px; color: inherit; }
+.news .facts { font-size: 0.82rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
+
+/* scenarios */
+.band { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; }
+.band-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.band-pct { font-size: 1.6rem; font-weight: 600; }
+.bar { height: 6px; background: var(--paper); border-radius: 3px; margin: 6px 0 8px; }
+.bar-fill { height: 6px; background: var(--ink); border-radius: 3px; }
+.band p { margin: 8px 0; line-height: 1.5; }
+.action-row { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--soft); }
+.signal-list { margin: 6px 0 0; padding-left: 18px; }
+.signal-list li { margin-bottom: 4px; }
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+.chart text { font-family: inherit; }
+.chart .halo { paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; }
+
+/* risk lab */
+.controls { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-end; }
+.seg-label { font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; flex-wrap: wrap; }
+.seg button { border: 0; border-right: 1px solid var(--line); background: var(--surface); padding: 6px 12px; cursor: pointer; font-size: 0.88rem; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.check-row { display: flex; gap: 10px; padding: 5px 0; }
+table.sens { width: 100%; font-size: 0.85rem; border-collapse: separate; border-spacing: 4px; }
+table.sens th { color: var(--muted); font-weight: 500; text-align: left; }
+table.sens td { padding: 8px; border-radius: 3px; }
+table.sens td.same { background: #E3F1EC; color: var(--green); }
+table.sens td.diff { background: #F8E6E4; color: var(--red); }
+
+/* decision */
+.letter h2 { font-size: 1.45rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px; max-width: 34ch; line-height: 1.25; }
+.letter p { line-height: 1.6; max-width: 70ch; margin-bottom: 10px; }
+.letter .lead { font-size: 1.05rem; }
+.audit-num { display: inline-block; margin: 0 8px 6px 0; padding: 2px 8px; border-radius: 3px; font-size: 0.85rem; }
+.audit-num.ok { background: #E3F1EC; } .audit-num.bad { background: #F8E6E4; }
+.decide fieldset { border: 0; padding: 0; margin: 0 0 14px; }
+.decide legend { font-weight: 500; margin-bottom: 6px; padding: 0; }
+.decide label { display: block; margin: 4px 0; cursor: pointer; }
+.btn { background: var(--ink); color: #fff; border: 0; border-radius: 4px; padding: 9px 16px; cursor: pointer; font-weight: 500; }
+.btn:hover { background: #1D4560; }
+.done-banner { background: #E3F1EC; color: var(--green); padding: 10px 14px; border-radius: 4px; margin: 12px 0; }
+.task { border: 1px solid var(--line); border-left: 4px solid var(--green); border-radius: 3px; padding: 12px 14px; margin-top: 10px; }
+
+/* what-if */
+.form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; align-items: end; }
+.form-grid label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; }
+.form-grid select { width: 100%; }
+.result-head { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.big { font-size: 1.15rem; font-weight: 600; margin: 6px 0; }
+.kv { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 12px 0; }
+.kv > div { border-left: 4px solid var(--line); padding: 2px 12px; }
+.kv .k { font-size: 0.8rem; color: var(--muted); }
+.kv .v { font-size: 1.35rem; font-weight: 600; }
+
+/* about */
+.about { max-width: 920px; }
+.about h3 { margin-top: 6px; }
+.about p { line-height: 1.6; margin-bottom: 10px; max-width: 75ch; }
+.about table { margin-bottom: 12px; }
+code, pre { font-family: ui-monospace, Consolas, monospace; font-size: 0.85rem; }
+pre { background: var(--paper); border-radius: 4px; padding: 10px 12px; white-space: pre-wrap; }
+footer { margin-top: 28px; font-size: 0.8rem; color: var(--muted); }
+
+@media (max-width: 1000px) {
+  .ribbon { grid-template-columns: 1fr 44px 44px; }
+  .days { grid-column: 1 / -1; grid-row: 2; overflow-x: auto; padding-bottom: 4px; }
+  .figures { grid-template-columns: 1fr 1fr; }
+  .grid-2, .grid-half, .grid-3, .feed { grid-template-columns: 1fr; }
+  .track { grid-template-columns: repeat(4, 1fr); row-gap: 14px; } .track::before { display: none; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+  .route-head select { min-width: 0; width: 100%; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px 40px; }
+  .figures { grid-template-columns: 1fr; }
+  .figure .value { font-size: 1.6rem; }
+  .today { font-size: 1.5rem; }
+  .form-grid, .kv { grid-template-columns: 1fr; }
+  .tabs { gap: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topbar">
+    <h1 class="brand">Nova risk control panel <span class="demo-tag">Demo version</span></h1>
+    <nav class="toplinks" aria-label="Page links">
+      <a href="#about" data-goto="about">About this demo</a>
+    </nav>
+  </header>
+
+  <p class="notice"><strong>Static demo of an agentic AI prototype for supply chain risk management.</strong>
+    The company and all data are synthetic. Every number was computed in advance by the R risk engine and saved with this page.
+    Agent text is the recorded output of the AI agents, replayed here. This page calls no language model and no server.</p>
+
+  <section class="ribbon" aria-label="Simulation date">
+    <div>
+      <div class="today-label">Simulation date</div>
+      <div class="today num" id="today"></div>
+      <button class="reset" id="reset" type="button">Start over</button>
+    </div>
+    <button class="step" id="back" type="button" aria-label="Previous day">&#8249;</button>
+    <div class="days" id="days"></div>
+    <button class="step" id="fwd" type="button" aria-label="Next day">&#8250;</button>
+  </section>
+
+  <section class="panel" style="margin-top:14px;" aria-label="Agent pipeline">
+    <div class="route-head">
+      <h2>How the agents handled this event</h2>
+      <select id="event" aria-label="Open event"></select>
+    </div>
+    <div class="track" id="track"></div>
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <div class="figures" id="figures"></div>
+
+  <div class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-view="control">Control panel</button>
+    <button class="tab" role="tab" data-view="news">News feed</button>
+    <button class="tab" role="tab" data-view="scenarios">Scenarios</button>
+    <button class="tab" role="tab" data-view="lab">Risk lab</button>
+    <button class="tab" role="tab" data-view="decision">Decision room</button>
+    <button class="tab" role="tab" data-view="whatif">What-if explorer</button>
+    <button class="tab" role="tab" data-view="about">About</button>
+  </div>
+
+  <section class="view" id="view-control"></section>
+  <section class="view" id="view-news"></section>
+  <section class="view" id="view-scenarios"></section>
+  <section class="view" id="view-lab"></section>
+  <section class="view" id="view-decision"></section>
+  <section class="view" id="view-whatif"></section>
+  <section class="view" id="view-about"></section>
+
+  <footer id="footer"></footer>
+</div>
+
+<script src="data.js"></script>
+<script>
+"use strict";
+const D = window.NOVA;
+const COL = { red: "#C8423B", amber: "#D98E2B", gold: "#C9A227", green: "#2E8B6A", grey: "#8A9BA8", blue: "#2563A8", ink: "#0F2A3D" };
+const ROUTE_COL = { "CVaR": "red", "Mean-variance": "amber", "VaR": "amber", "Abstain": "amber", "Monitor": "gold",
+  "Close": "green", "Ignore": "grey", "Duplicate": "grey", "Reject": "grey" };
+const STAGES = ["Sources", "Monitoring agent", "Scenario agent", "Validation and routing", "Risk engine",
+  "Verification", "Explanation agent", "Manager decision"];
+const STATE_TEXT = { done: "done", warning: "check", pending: "your decision", waiting: "waiting", skipped: "not needed" };
+const WAIT = "Wait and use safety stock";
+const DAYS = D.meta.days;
+const state = { day: 0, event: null, view: "control", alpha: 0.95, stress: 1.0, lossAction: null, decided: {},
+  wi: { sid: "S1", type: "Port strike", len: "history", air: "3000", pct: "25" } };
+
+// ---------- helpers ----------
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const n0 = x => Math.round(x).toLocaleString("en-US");
+const usd = x => (x < 0 ? "-$" : "$") + Math.abs(Math.round(x)).toLocaleString("en-US");
+const usd2 = x => "$" + Number(x).toFixed(2);
+const chip = (t, c = "grey", solid = false) => `<span class="chip${solid ? " solid" : ""}" style="${solid ? "background" : "color"}:${COL[c] || c}">${esc(t)}</span>`;
+const routeChip = (r, solid = true) => chip(r, ROUTE_COL[r] || "grey", solid);
+const parseDay = s => { const [y, m, d] = s.split("-").map(Number); return new Date(Date.UTC(y, m - 1, d)); };
+const fmtDay = (s, o) => parseDay(s).toLocaleDateString("en-GB", Object.assign({ timeZone: "UTC" }, o));
+const supplier = id => D.meta.suppliers.find(s => s.id === id);
+const today = () => DAYS[state.day];
+const dayData = () => D.days[today()];
+const curEvent = () => (state.event && dayData().events[state.event]) || null;
+const recordedTag = (who, model) => `<span class="recorded">Recorded output of the ${esc(who)}${model ? ", " + esc(model) : ""}</span>`;
+const notRecorded = what => `<p class="small-note">No ${esc(what)} was recorded for this day. The engine numbers on this page are computed as usual.</p>`;
+const pct = p => Math.round(100 * p) + "%";
+
+// ---------- ribbon ----------
+function renderRibbon() {
+  $("#today").textContent = fmtDay(today(), { weekday: "short", day: "2-digit", month: "short" });
+  $("#back").disabled = state.day === 0; $("#fwd").disabled = state.day === DAYS.length - 1;
+  $("#days").innerHTML = DAYS.map((s, i) => {
+    const items = i <= state.day ? D.news.filter(n => n.published_date === s) : [];
+    const ticks = items.map(n => `<span class="tick" style="background:${COL[ROUTE_COL[n.route] || "grey"]}"></span>`).join("");
+    const month = (i === 0 || s.slice(5, 7) !== DAYS[i - 1].slice(5, 7)) ? fmtDay(s, { month: "short" }) : "";
+    const cls = ["day", i === state.day ? "current" : "", i > state.day ? "future" : ""].join(" ");
+    return `<button type="button" class="${cls}" data-i="${i}" aria-label="${fmtDay(s, { weekday: "long", day: "numeric", month: "long" })}"${i === state.day ? ' aria-current="date"' : ""}>
+      <span class="month">${month}</span><span class="wd">${fmtDay(s, { weekday: "short" }).slice(0, 2)}</span>
+      <span class="dn num">${s.slice(8)}</span><span class="ticks">${ticks}</span></button>`;
+  }).join("");
+}
+
+// ---------- pipeline ----------
+function renderPipeline() {
+  const dd = dayData(), sel = $("#event");
+  const open = dd.open;
+  if (!open.includes(state.event)) state.event = open[0] || null;
+  sel.innerHTML = open.length ? open.map(id => { const e = dd.events[id];
+    return `<option value="${id}"${id === state.event ? " selected" : ""}>${esc(e.event_type)} at ${esc(e.location)} (${esc(e.route.method)})</option>`; }).join("")
+    : `<option>No open events yet</option>`;
+  sel.disabled = !open.length;
+  const e = curEvent();
+  const st = e ? e.stage : Object.fromEntries(STAGES.map((s, i) => [s, i < 2 ? "done" : "waiting"]));
+  if (e && state.decided[key()] && st["Manager decision"] === "pending") st["Manager decision"] = "done";
+  $("#track").innerHTML = STAGES.map((s, i) => { const v = st[s];
+    return `<div class="station st-${v}"><div class="dot num">${v === "done" ? "&#10003;" : i + 1}</div>
+      <div class="name">${s}</div><div class="state">${STATE_TEXT[v]}</div></div>`; }).join("");
+  $("#verdict").innerHTML = e ? `${routeChip(e.route.method)}<span>${esc(e.route.reason)}</span>${e.recommended ? `<span class="rec">Recommended: ${esc(e.recommended)}</span>` : ""}`
+    : `<span class="small-note">No supplier is affected yet. Move the date forward to let news arrive.</span>`;
+}
+const key = () => `${state.event}|${today()}`;
+
+function renderFigures() {
+  const dd = dayData(), e = curEvent(), cover = D.meta.cover_s1, used = dd.cover_used;
+  const t = e && e.table, w = t && t.find(r => r.action === WAIT), p = t && t.find(r => r.action === e.recommended);
+  const fig = (label, value, note, tone) => `<div class="figure ${tone}"><div class="label">${label}</div><div class="value num">${value}</div><div class="note">${note}</div></div>`;
+  const none = "No risk model needed yet";
+  $("#figures").innerHTML =
+    fig("Open alerts", dd.open.length, "Events still being tracked", "blue") +
+    fig("Stock cover left at S1", `${Math.max(0, cover - used)} of ${cover} days`, used > 0 ? `Strike has lasted ${used} days` : "Safety stock untouched", used > 0 ? "amber" : "green") +
+    fig("Worst case if we wait", w ? usd(w.CVaR) : "&ndash;", w ? "Average of the worst 5% of outcomes (CVaR)" : none, "red") +
+    fig("Worst case with the plan", p ? usd(p.CVaR) : "&ndash;", p ? "Same measure, after the recommended actions" : none, "green");
+}
+
+// ---------- control panel ----------
+function supplierStatus() {
+  const dd = dayData(), rank = { "CVaR": 1, "VaR": 2, "Mean-variance": 3, "Abstain": 4, "Monitor": 5 };
+  const out = {};
+  dd.open.forEach(id => { const e = dd.events[id], s = e.supplier_id, r = e.route.method;
+    if (s && (!out[s] || rank[r] < rank[out[s]])) out[s] = r; });
+  return out;
+}
+function mapSVG() {
+  const st = supplierStatus(), hq = D.meta.hq, X = lon => lon < -30 ? lon + 360 : lon;
+  const hx = X(hq.lon), hy = -hq.lat;
+  const routes = D.meta.suppliers.map(s => {
+    const x = X(s.lon), y = -s.lat, c = COL[ROUTE_COL[st[s.id]] || "green"];
+    const cx = (x + hx) / 2, cy = Math.min(y, hy) - (s.mode === "Truck" ? 4 : 16);
+    return `<path d="M${x} ${y}Q${cx} ${cy} ${hx} ${hy}" fill="none" stroke="${c}" stroke-width="0.9" stroke-dasharray="${s.mode === "Truck" ? "1.6 1.2" : "none"}" opacity="0.75"/>`;
+  }).join("");
+  const dots = D.meta.suppliers.map(s => {
+    const x = X(s.lon), y = -s.lat, r = st[s.id], c = COL[ROUTE_COL[r] || "green"];
+    const right = s.id === "S3";
+    return `<g><circle cx="${x}" cy="${y}" r="2.6" fill="${c}" stroke="#fff" stroke-width="0.8"><title>${esc(s.id + " " + s.name + ", " + s.city + ". " + (r ? "Route: " + r : "No open alert"))}</title></circle>
+      <text x="${x + (right ? -4 : 4)}" y="${y + 1.2}" font-size="3.6" text-anchor="${right ? "end" : "start"}" fill="#0F2A3D">${esc(s.id + " " + s.city)}</text></g>`;
+  }).join("");
+  return `<svg viewBox="82 -62 208 80" role="img" aria-label="Map of Nova's suppliers and shipping routes to Chicago">
+    <path d="${D.map.path}" fill="#DCE5EB" stroke="#C3D0D9" stroke-width="0.25"/>
+    ${routes}${dots}
+    <rect x="${hx - 2.4}" y="${hy - 2.4}" width="4.8" height="4.8" fill="#0F2A3D"><title>Nova Electronics assembly plant, Chicago</title></rect>
+    <text x="${hx}" y="${hy - 4}" font-size="3.6" text-anchor="middle" fill="#0F2A3D">Chicago plant</text></svg>`;
+}
+function renderControl() {
+  const dd = dayData();
+  const rows = dd.open.map(id => { const e = dd.events[id];
+    const first = D.news.filter(n => n.event_id === id).map(n => n.published_date).sort()[0];
+    return `<tr><td><strong>${esc(e.event_type)}</strong><br><span class="small-note">${esc(e.location)}</span></td>
+      <td>${esc(e.supplier_id || "none")}</td><td>${esc(e.status)}</td><td>${routeChip(e.route.method, false)}</td>
+      <td class="num">${fmtDay(first, { day: "2-digit", month: "short" })}</td></tr>`; }).join("");
+  $("#view-control").innerHTML = `<div class="grid-2">
+    <div class="panel"><h3>Supplier network</h3><div class="map">${mapSVG()}</div>
+      <div class="legend"><span><i style="background:${COL.red}"></i>Severe disruption, CVaR model running</span>
+        <span><i style="background:${COL.amber}"></i>Routine or uncertain risk</span><span><i style="background:${COL.gold}"></i>Being monitored</span>
+        <span><i style="background:${COL.green}"></i>No open alert</span><span><i style="background:${COL.ink};border-radius:0"></i>Nova assembly plant</span>
+        <span>Dashed line: truck route</span></div>
+      <h3 style="margin-top:18px">Suppliers</h3>SUPPLIERS_TABLE</div>
+    <div class="panel"><h3>Open alerts</h3>${rows ? `<div class="scroll"><table class="log"><thead><tr><th>Event</th><th>Supplier</th><th>Status</th><th>Route</th><th class="num">Since</th></tr></thead><tbody>${rows}</tbody></table></div>`
+      : `<p class="empty" style="padding:8px 0">No open alerts. Move the date forward to let news arrive.</p>`}</div></div>`.replace("SUPPLIERS_TABLE", `<div class="scroll"><table class="log"><thead><tr><th>Supplier</th><th>Part</th><th class="num">Share</th><th>Ships by</th><th class="num">Lead time</th></tr></thead><tbody>
+      ${D.meta.suppliers.map(s => `<tr><td>${esc(s.id + " " + s.name)}<br><span class="small-note">${esc(s.city + ", " + s.country)}</span></td><td>${esc(s.component)}</td><td class="num">${pct(s.share)}</td><td>${esc(s.mode)}</td><td class="num">${s.lead} days</td></tr>`).join("")}
+      </tbody></table></div>`);
+}
+
+// ---------- news ----------
+function highlight(text, quote, ok) {
+  if (!quote || !ok) return esc(text);
+  const i = text.indexOf(quote);
+  if (i < 0) return esc(text);
+  return esc(text.slice(0, i)) + `<mark title="Evidence used by the monitoring agent">${esc(quote)}</mark>` + esc(text.slice(i + quote.length));
+}
+function renderNews() {
+  const items = D.news.filter(n => n.published_date <= today()).sort((a, b) => b.published_date.localeCompare(a.published_date) || b.news_id.localeCompare(a.news_id));
+  const trustCol = t => t >= 0.8 ? "green" : t >= 0.5 ? "amber" : "red";
+  const card = n => {
+    const ign = n.relation === "ignored";
+    const chips = (ign ? chip("not relevant", "grey") : chip(n.event_type, "ink")) +
+      (["update", "duplicate"].includes(n.relation) ? chip(n.relation + " of " + n.event_id, "grey") : "") +
+      (!ign && n.route ? routeChip(n.route) : "") + chip("source trust " + Number(n.trust).toFixed(2), trustCol(n.trust));
+    const facts = n.relevant ? `Extracted: ${esc(n.status)}, supplier ${esc(n.supplier_id || "none")}, ${esc(n.location)}${n.start_date ? ", starts " + fmtDay(n.start_date, { month: "short", day: "2-digit" }) : ""}<br>
+      ${n.quote_verified ? `<span class="ok">&#10003; Quote found word for word in the article</span>` : `<span class="bad">&#10007; Quote not found in the article, item rejected</span>`}<br>${esc(n.reason)}`
+      : esc(n.reason);
+    return `<article class="news${ign ? " ignored" : ""}"><h4>${esc(n.headline)}</h4>
+      <div class="meta">${fmtDay(n.published_date, { weekday: "short", day: "2-digit", month: "short" })}, ${esc(n.source)}</div>
+      <div style="margin-bottom:10px">${chips}</div><p>${n.relevant ? highlight(n.text, n.quote, n.quote_verified) : esc(n.text)}</p>
+      <div class="facts">${facts}</div></article>`;
+  };
+  $("#view-news").innerHTML = `<p class="small-note mb" style="max-width:80ch">News arrives day by day. Highlighted text is the exact sentence the monitoring agent used as evidence. ${recordedTag("monitoring agent", D.meta.agent_model)}</p>
+    ${items.length ? `<div class="feed">${items.map(card).join("")}</div>` : `<div class="panel empty">No news yet. Move the date forward.</div>`}`;
+}
+
+// ---------- charts ----------
+function lnorm(x, m, s) { return x <= 0 ? 0 : Math.exp(-Math.pow(Math.log(x) - m, 2) / (2 * s * s)) / (x * s * Math.sqrt(2 * Math.PI)); }
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const f = v / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+function axisMoney(v) { return v >= 1e6 ? "$" + (v / 1e6).toFixed(1) + "M" : v >= 1e3 ? "$" + Math.round(v / 1e3) + "k" : "$" + Math.round(v); }
+
+function historyChart(h, minDays) {
+  const W = 560, H = 260, L = 44, R = 12, T = 14, B = 40, iw = W - L - R, ih = H - T - B;
+  const xmax = Math.max(60, Math.max(...h.obs) * 1.3), bw = 4;
+  const nb = Math.ceil(xmax / bw), counts = Array(nb).fill(0);
+  h.obs.forEach(o => { counts[Math.min(nb - 1, Math.floor(o / bw))]++; });
+  const curve = []; for (let i = 0; i <= 200; i++) { const x = 0.5 + i * (xmax - 0.5) / 200; curve.push([x, lnorm(x, h.meanlog, h.sdlog) * h.n * bw]); }
+  const ymax = Math.max(2, Math.ceil(Math.max(...counts, ...curve.map(c => c[1])) * 1.1));
+  const ystep = ymax <= 6 ? 1 : Math.ceil(ymax / 5);
+  const sx = x => L + x / xmax * iw, sy = y => T + ih - y / ymax * ih;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Histogram of ${h.n} past events with fitted lognormal curve">`;
+  if (minDays > 0) s += `<rect x="${sx(0)}" y="${T}" width="${sx(minDays) - sx(0)}" height="${ih}" fill="${COL.red}" opacity="0.08"/><text x="${(sx(0) + sx(minDays)) / 2}" y="${T + 12}" text-anchor="middle" font-size="11" fill="${COL.red}">ruled out</text>`;
+  for (let v = 0; v <= ymax; v += ystep) { const y = sy(v);
+    s += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#EDF2F5"/><text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="11" fill="#5B7083">${v}</text>`; }
+  counts.forEach((c, i) => { if (c) s += `<rect x="${sx(i * bw) + 1}" y="${sy(c)}" width="${sx(bw) - sx(0) - 2}" height="${sy(0) - sy(c)}" fill="#9FB3C2"><title>${c} past events lasting ${i * bw} to ${(i + 1) * bw} days</title></rect>`; });
+  s += `<polyline fill="none" stroke="${COL.ink}" stroke-width="2.5" points="${curve.map(c => sx(c[0]).toFixed(1) + "," + sy(c[1]).toFixed(1)).join(" ")}"/>`;
+  for (let x = 0; x <= xmax; x += 10) s += `<text x="${sx(x)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="#5B7083">${x}</text>`;
+  s += `<text x="${L + iw / 2}" y="${H - 4}" text-anchor="middle" font-size="12" fill="#5B7083">Duration in days</text></svg>`;
+  return s + `<div class="legend"><span><i style="background:#9FB3C2;border-radius:0"></i>Past events</span><span><i style="background:${COL.ink};height:3px;border-radius:0"></i>Fitted lognormal curve</span></div>`;
+}
+
+function compareChart(tab, best) {
+  const W = 560, rowH = 46, L = 190, R = 70, T = 6, H = T + tab.length * rowH + 30, iw = W - L - R;
+  const xmax = niceMax(Math.max(...tab.map(r => Math.max(r.expected, r.CVaR))) * 1.05);
+  const sx = v => L + v / xmax * iw;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Expected loss and CVaR for each action">`;
+  for (let k = 0; k <= 4; k++) { const x = sx(xmax * k / 4); s += `<line x1="${x}" x2="${x}" y1="${T}" y2="${H - 26}" stroke="#EDF2F5"/><text x="${x}" y="${H - 10}" text-anchor="middle" font-size="11" fill="#5B7083">${axisMoney(xmax * k / 4)}</text>`; }
+  tab.forEach((r, i) => { const y = T + i * rowH, b = r.action === best;
+    s += `<text x="${L - 8}" y="${y + 24}" text-anchor="end" font-size="12" fill="${COL.ink}" font-weight="${b ? 600 : 400}">${esc(r.action.length > 28 ? r.action.slice(0, 27) + "…" : r.action)}</text>
+      <rect x="${L}" y="${y + 6}" width="${Math.max(1, sx(r.expected) - L)}" height="15" fill="#9FB3C2"><title>Expected loss ${usd(r.expected)}</title></rect>
+      <rect x="${L}" y="${y + 23}" width="${Math.max(1, sx(r.CVaR) - L)}" height="15" fill="${COL.red}"><title>CVaR ${usd(r.CVaR)}</title></rect>
+      <text x="${sx(r.CVaR) + 5}" y="${y + 35}" font-size="11" fill="#5B7083">${usd(r.CVaR)}</text>`; });
+  return s + `</svg><div class="legend"><span><i style="background:#9FB3C2;border-radius:0"></i>Expected loss</span><span><i style="background:${COL.red};border-radius:0"></i>CVaR, the average of the worst ${Math.round(100 * (1 - state.alpha))}% of outcomes</span></div>`;
+}
+
+function lossChart(hist, tab, action) {
+  const W = 560, H = 250, L = 46, R = 12, T = 30, B = 42, iw = W - L - R, ih = H - T - B;
+  const ai = hist.actions.indexOf(action), wi = hist.actions.indexOf(WAIT), br = hist.breaks, xmax = br[br.length - 1] || 1;
+  const pA = hist.p[ai], pW = wi >= 0 && wi !== ai ? hist.p[wi] : null;
+  const ymax = Math.min(1, Math.ceil(Math.max(...pA, ...(pW || [0])) * 1.05 / 0.1) * 0.1);
+  const sx = v => L + v / xmax * iw, sy = v => T + ih - v / ymax * ih, row = tab.find(r => r.action === action);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Loss distribution for ${esc(action)}">`;
+  for (let k = 0; k <= 4; k++) { const v = ymax * k / 4, y = sy(v); s += `<line x1="${L}" x2="${W - R}" y1="${y}" y2="${y}" stroke="#EDF2F5"/><text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="11" fill="#5B7083">${Math.round(v * 100)}%</text>`; }
+  const bars = (p, fill, op) => p.map((v, i) => v > 0 ? `<rect x="${sx(br[i]) + 0.5}" y="${sy(v)}" width="${Math.max(0.5, sx(br[i + 1]) - sx(br[i]) - 1)}" height="${sy(0) - sy(v)}" fill="${fill}" opacity="${op}"><title>${Math.round(v * 1000) / 10}% of outcomes between ${usd(br[i])} and ${usd(br[i + 1])}</title></rect>` : "").join("");
+  if (pW) s += bars(pW, "#9FB3C2", 0.6);
+  s += bars(pA, COL.ink, 0.85);
+  const marks = [[row.expected, COL.ink, "Expected", true], [row.VaR, COL.amber, "VaR " + Math.round(state.alpha * 100) + "%", false], [row.CVaR, COL.red, "CVaR", false]];
+  s += marks.map(m => `<line x1="${sx(m[0])}" x2="${sx(m[0])}" y1="${T - 4}" y2="${T + ih}" stroke="${m[1]}" stroke-width="2" ${m[3] ? 'stroke-dasharray="4 3"' : ""}/>`).join("");
+  s += marks.map((m, i) => { const right = sx(m[0]) > L + iw * 0.7;
+    return `<text class="halo" x="${sx(m[0]) + (right ? -5 : 5)}" y="${T + 10 + i * 14}" text-anchor="${right ? "end" : "start"}" font-size="11" font-weight="600" fill="${m[1]}">${m[2]} ${usd(m[0])}</text>`; }).join("");
+  for (let k = 0; k <= 4; k++) s += `<text x="${sx(xmax * k / 4)}" y="${H - B + 16}" text-anchor="middle" font-size="11" fill="#5B7083">${axisMoney(xmax * k / 4)}</text>`;
+  s += `<text x="${L + iw / 2}" y="${H - 4}" text-anchor="middle" font-size="12" fill="#5B7083">Loss over the planning horizon</text></svg>`;
+  return s + `<div class="legend"><span><i style="background:${COL.ink};border-radius:0"></i>This action</span>${pW ? `<span><i style="background:#9FB3C2;border-radius:0"></i>Waiting, for comparison</span>` : ""}<span>Bars show the share of outcomes, weighted by probability</span></div>`;
+}
+
+// ---------- scenarios ----------
+const noModel = e => !e ? `<div class="panel empty">No supplier is affected yet. Move the date forward to let news arrive.</div>`
+  : `<div class="panel empty">This event is routed to ${esc(e.route.method)}, so no scenarios or risk model are needed. ${esc(e.route.reason)}</div>`;
+function renderScenarios() {
+  const e = curEvent();
+  if (!e || !e.scenario) { $("#view-scenarios").innerHTML = noModel(e); return; }
+  const s = e.scenario;
+  const agent = s.recorded ? `<p style="margin-bottom:8px"><strong>Key uncertainty: </strong>${esc(s.key_uncertainty)}</p>
+      <p style="margin-bottom:8px"><strong>Safety stock: </strong>covers about ${s.cover_days} days of this supplier's volume.</p>
+      ${s.min_days > 0 ? `<p style="margin-bottom:8px"><strong>Already lasted: </strong>${s.min_days} days, so shorter outcomes are ruled out.</p>` : ""}
+      <strong>Watch for next</strong><ul class="signal-list">${s.watch_signals.map(w => `<li>${esc(w)}</li>`).join("")}</ul>
+      <p class="small-note" style="margin-top:8px">${recordedTag("scenario agent", s.model_name)}</p>`
+    : `<p style="margin-bottom:8px"><strong>Safety stock: </strong>covers about ${s.cover_days} days of this supplier's volume.</p>
+      ${s.min_days > 0 ? `<p style="margin-bottom:8px"><strong>Already lasted: </strong>${s.min_days} days, so shorter outcomes are ruled out.</p>` : ""}${notRecorded("scenario agent text")}`;
+  const bands = s.bands.map(b => `<div class="band"><div class="band-head"><strong>${esc(b.band)}</strong><span class="num band-pct">${pct(b.probability)}</span></div>
+      <div class="bar"><div class="bar-fill" style="width:${pct(b.probability)}"></div></div>
+      <div class="small-note">From ${b.from} to ${b.to} days, typically ${b.typical} days</div>
+      ${b.narrative ? `<p>${esc(b.narrative)}</p>${b.flagged ? `<div class="bad small-note">&#10007; Unsupported numbers in this text: ${esc(b.flagged)}</div>` : `<div class="ok small-note">&#10003; Every number in this text comes from the input</div>`}` : ""}</div>`).join("");
+  const acts = s.actions.map(a => `<div class="action-row"><div><strong>${esc(a.action)}</strong>${a.rationale ? `<br><span class="small-note">${esc(a.rationale)}</span>` : ""}</div>
+      ${a.to_solver ? chip("sent to the solver", "green") : chip("needs costing, not optimised", "amber")}</div>`).join("");
+  $("#view-scenarios").innerHTML = `<div class="grid-2 mb">
+      <div class="panel"><h3>Where the probabilities come from</h3>
+        <p class="small-note mb">${s.history.n} past ${esc(e.event_type.toLowerCase())} events, fitted with a lognormal curve. The language model never sets these numbers.</p>
+        <div class="chart">${historyChart(s.history, s.min_days)}</div></div>
+      <div class="panel"><h3>What the scenario agent noticed</h3>${agent}</div></div>
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:10px">Scenarios</h3>
+    <div class="grid-3 mb">${bands}</div>
+    <div class="panel"><h3>Candidate actions</h3><p class="small-note mb">The agent may only send actions from the firm's catalogue to the solver. Anything else is shown for the manager to cost.</p>${acts}</div>`;
+}
+
+// ---------- risk lab ----------
+function seg(label, values, cur, attr, fmt) {
+  return `<div><div class="seg-label">${label}</div><div class="seg" role="group" aria-label="${label}">${values.map(v =>
+    `<button type="button" data-${attr}="${v}" aria-pressed="${Math.abs(v - cur) < 1e-9}">${fmt(v)}</button>`).join("")}</div></div>`;
+}
+function renderLab() {
+  const e = curEvent();
+  if (!e || !e.table) { $("#view-lab").innerHTML = noModel(e); return; }
+  const g = D.lab[key()][`${state.alpha.toFixed(2)}|${state.stress.toFixed(1)}`];
+  const isDefault = Math.abs(state.alpha - e.alpha) < 1e-9 && state.stress === 1;
+  if (!g.table.some(r => r.action === state.lossAction)) state.lossAction = g.best;
+  const v = e.verification, a = e.adaptive;
+  const rows = g.table.map(r => `<tr class="${r.action === g.best ? "best" : ""}"><td>${esc(r.action)}</td><td class="num">${n0(r.x_backup)}</td><td class="num">${n0(r.x_air)}</td>
+      <td class="num">${usd(r.expected)}</td><td class="num">${usd(r.sd)}</td><td class="num">${usd(r.VaR)}</td><td class="num">${usd(r.CVaR)}</td></tr>`).join("");
+  const scales = [...new Set(v.sensitivity.map(x => x.scale))].sort(), alphas = [...new Set(v.sensitivity.map(x => x.alpha))].sort();
+  const sens = `<table class="sens"><thead><tr><th>Durations</th>${alphas.map(x => `<th>alpha ${x.toFixed(2)}</th>`).join("")}</tr></thead><tbody>${scales.map(sc =>
+    `<tr><th>${sc < 1 ? Math.round(100 * (1 - sc)) + "% shorter" : sc > 1 ? Math.round(100 * (sc - 1)) + "% longer" : "as estimated"}</th>${alphas.map(al => {
+      const r = v.sensitivity.find(x => x.scale === sc && x.alpha === al).recommended; return `<td class="${r === e.recommended ? "same" : "diff"}">${esc(r)}</td>`; }).join("")}</tr>`).join("")}</tbody></table>`;
+  const trail = a.trail.map(t => `<tr><td class="num">${n0(t.scenarios)}</td><td class="num">${n0(t.compared_with)}</td><td>${esc(t.recommended)}</td>
+      <td class="num">${usd(t.score)}</td><td class="num">${t.change_pct.toFixed(2)}%</td><td>${t.accepted ? `<span class="ok">&#10003; yes</span>` : `<span class="bad">no</span>`}</td></tr>`).join("");
+  $("#view-lab").innerHTML = `<div class="panel mb"><div class="controls">
+      ${seg("Confidence level for VaR and CVaR", D.meta.alphas, state.alpha, "alpha", x => x.toFixed(2))}
+      ${seg("Stress test: event durations", D.meta.stress, state.stress, "stress", x => x.toFixed(1) + "x")}
+      <p class="small-note" style="max-width:46ch">The risk engine was run in advance for every combination of these settings. No language model is involved here.</p></div></div>
+    <div class="panel mb"><div class="verdict" style="margin:0;padding:0;border:0">${routeChip(e.route.method)}<span>With these settings the engine recommends</span><span class="rec">${esc(g.best)}</span>
+      ${g.best !== e.recommended ? chip("different from the default recommendation", "amber") : ""}</div>
+      <p class="small-note" style="margin-top:8px">${n0(g.n)} scenarios used, chosen by the engine${isDefault ? "" : " for these settings"}.</p></div>
+    <div class="grid-half mb">
+      <div class="panel"><h3>Average loss against worst-case loss</h3><div class="chart">${compareChart(g.table, g.best)}</div></div>
+      <div class="panel"><h3>Loss distribution</h3><select id="lossAction" aria-label="Action shown" style="width:100%;margin-bottom:10px">${g.table.map(r =>
+        `<option${r.action === state.lossAction ? " selected" : ""}>${esc(r.action)}</option>`).join("")}</select><div class="chart">${lossChart(g.hist, g.table, state.lossAction)}</div></div></div>
+    <div class="panel mb"><h3>Results for each action</h3><div class="scroll"><table class="log"><thead><tr><th>Action</th><th class="num">Backup units</th><th class="num">Air units</th>
+      <th class="num">Expected loss</th><th class="num">Spread</th><th class="num">VaR</th><th class="num">CVaR</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+    <div class="grid-half">
+      <div class="panel"><h3>Verification of the default result</h3>
+        ${v.checks.map(c => `<div class="check-row"><span class="${c.passed ? "ok" : "bad"}">${c.passed ? "&#10003;" : "&#10007;"}</span><span>${esc(c.check)}</span></div>`).join("")}
+        <div class="check-row"><span class="${v.stable ? "ok" : "bad"}">${v.stable ? "&#10003;" : "&#10007;"}</span><span>Recommendation unchanged in ${Math.round(100 * v.stable_share)}% of sensitivity cases</span></div>
+        <h3 style="margin-top:16px">How many scenarios the engine chose</h3>
+        <p class="small-note mb">The engine doubles the number of scenarios until the recommendation and its risk score stop changing.</p>
+        <div class="scroll"><table class="log"><thead><tr><th class="num">Scenarios</th><th class="num">Compared with</th><th>Recommended</th><th class="num">Risk score</th><th class="num">Change</th><th>Accepted</th></tr></thead><tbody>${trail}</tbody></table></div></div>
+      <div class="panel"><h3>Sensitivity check</h3><p class="small-note mb">The recommendation when durations and alpha are shifted. Green cells agree with the default.</p>${sens}</div></div>`;
+}
+
+// ---------- decision ----------
+function renderDecision() {
+  const e = curEvent();
+  if (!e || !e.table) { $("#view-decision").innerHTML = noModel(e); return; }
+  const x = e.explanation, done = state.decided[key()];
+  const memo = x.recorded ? `<h2>${esc(x.headline)}</h2><p class="lead">${esc(x.recommendation)}</p><p>${esc(x.why)}</p>
+      <strong>Trade-offs</strong><ul class="signal-list" style="margin-bottom:10px">${x.tradeoffs.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+      <p><strong>What would change this: </strong>${esc(x.what_would_change)}</p>
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--line)"><strong>Number check</strong>
+        <p class="small-note" style="margin:4px 0 8px">Every number in this text was compared with the risk engine's output.</p>
+        ${x.audit.map(a => `<span class="audit-num num ${a.verified ? "ok" : "bad"}">${a.verified ? "&#10003;" : "&#10007;"} ${Number(a.number).toLocaleString("en-US")}</span>`).join("")}
+        <p style="margin-top:8px">${recordedTag("explanation agent", x.model_name)}</p></div>`
+    : `<h2>${esc(e.recommended)}</h2>${notRecorded("explanation agent memo")}`;
+  const tasks = e.tasks && e.tasks.length ? e.tasks.map(t => `<div class="task">${esc(t)}</div>`).join("") : `<p class="small-note">The recommended action orders nothing, so no follow-up messages are needed.</p>`;
+  $("#view-decision").innerHTML = `<div class="grid-2">
+    <div class="panel letter">${memo}</div>
+    <div class="panel decide"><h3>Your decision</h3>
+      ${done ? `<div class="done-banner">Recorded in this demo: ${esc(done)}. In the full system this is saved to the audit log with its sources and the models used.</div>` : ""}
+      <fieldset><legend>Decision</legend>
+        <label><input type="radio" name="dec" value="Approve" checked> Approve the recommendation</label>
+        <label><input type="radio" name="dec" value="Modify"> Choose a different action</label>
+        <label><input type="radio" name="dec" value="Reject"> Reject, take no action</label></fieldset>
+      <fieldset><legend>Was this alert relevant to Nova?</legend>
+        <label style="display:inline-block;margin-right:16px"><input type="radio" name="rel" value="Yes" checked> Yes</label>
+        <label style="display:inline-block"><input type="radio" name="rel" value="No"> No</label></fieldset>
+      <button class="btn" id="record" type="button">Record decision</button>
+      <p class="small-note" style="margin-top:10px">The system never acts on its own. Nothing is ordered until a manager records a decision. In the full system, marking an alert not relevant lowers trust in its source by 15%.</p>
+      <h3 style="margin-top:18px">Follow-up after approval</h3>
+      <p class="small-note">After approval, the drafting agent writes one message for each task below. The manager reviews and sends them. The system sends nothing.</p>${tasks}</div></div>`;
+}
+
+// ---------- what-if explorer ----------
+const WI_TYPES = () => [...D.meta.hist_types, "Lost shipment", "Tariff or price increase"];
+function renderWhatIf() {
+  const w = state.wi, sp = D.meta.suppliers, s = supplier(w.sid);
+  const opt = (v, t, cur) => `<option value="${esc(v)}"${String(v) === String(cur) ? " selected" : ""}>${esc(t)}</option>`;
+  const isTariff = w.type === "Tariff or price increase", isLost = w.type === "Lost shipment";
+  const lenSel = isTariff ? `<label for="wi-pct">Price change</label><select id="wi-pct">${[10, 25, 50].map(p => opt(p, "+" + p + "%", w.pct)).join("")}</select>`
+    : `<label for="wi-len">How long it lasts</label><select id="wi-len"${isLost ? " disabled" : ""}>${isLost ? opt("lead", `${s.lead} days, one lead time`, "lead")
+      : opt("history", "Estimate from past cases", w.len) + D.meta.lengths.map(L => opt(L, L % 7 === 0 ? `${L / 7} week${L > 7 ? "s" : ""}` : `${L} days`, w.len)).join("")}</select>`;
+  const form = `<div class="form-grid">
+      <div><label for="wi-sid">Supplier</label><select id="wi-sid">${sp.map(x => opt(x.id, `${x.id} ${x.city}, makes ${x.component}`, w.sid)).join("")}</select></div>
+      <div><label for="wi-type">What happens</label><select id="wi-type">${WI_TYPES().map(t => opt(t, t, w.type)).join("")}</select></div>
+      <div>${lenSel}</div>
+      <div><label for="wi-air">Air freight capacity</label><select id="wi-air"${isTariff ? " disabled" : ""}>${D.meta.airs.map(a => opt(a, n0(a) + " units" + (a === 3000 ? ", normal" : ""), w.air)).join("")}</select></div></div>`;
+  $("#view-whatif").innerHTML = `<div class="panel"><h3>What-if explorer</h3>
+      <p class="small-note mb" style="max-width:85ch">Choose a disruption at any of Nova's suppliers. Each combination was run through the same risk engine in advance, starting from the first day of the event. In the full system a manager can also ask these questions in plain words, and an AI agent turns them into these settings.</p>
+      ${form}<div id="wi-out"></div></div>`;
+  $("#wi-out").innerHTML = isTariff ? tariffResult() : whatIfResult();
+}
+function whatIfResult() {
+  const w = state.wi, s = supplier(w.sid), isLost = w.type === "Lost shipment";
+  const len = isLost ? s.lead : w.len;
+  const k = len === "history" ? `${w.sid}|${w.type}|history|${w.air}` : `${w.sid}|fixed|${len}|${w.air}`;
+  const r = D.whatif[k];
+  const label = `${w.type} ${isLost ? "from" : "at"} ${s.city} (${s.id}, ${s.component})`;
+  if (!r) return `<div class="result-head"><p class="small-note">No result stored for this combination.</p></div>`;
+  if (r.abstain) return `<div class="result-head">${chip(label, "blue")}<p class="big">Not enough history, so the engine abstains.</p>
+      <p>Only ${r.n} past ${esc(w.type.toLowerCase())} cases are on record. The engine needs at least ${D.meta.min_obs} to estimate how long it lasts, the same rule the router uses. Choose a length instead.</p></div>`;
+  const notes = [];
+  if (len === "history") notes.push(`Durations come from ${r.hist_n} past ${w.type.toLowerCase()} cases, starting from day 0.`);
+  else notes.push("With a fixed length there is only one scenario, so the expected loss and the worst case are the same.");
+  if (isLost) notes.push(`A lost shipment is modelled as ${s.id}'s supply stopping until a replacement arrives, which takes its lead time of ${s.lead} days. The value of the lost cargo itself is not counted.`);
+  if (!r.table.some(x => x.x_backup > 0)) notes.push(`No other nearby supplier makes ${s.component}, so air freight is the only recovery option.`);
+  if (Number(len) > 7 * D.meta.company.horizon_weeks) notes.push(`Losses after the ${7 * D.meta.company.horizon_weeks} day planning horizon are not counted.`);
+  const best = r.table.find(x => x.action === r.best), wait = r.table.find(x => x.action === WAIT);
+  const rows = r.table.map(x => `<tr class="${x.action === r.best ? "best" : ""}"><td>${esc(x.action)}</td><td class="num">${n0(x.x_backup)}</td><td class="num">${n0(x.x_air)}</td>
+      <td class="num">${usd(x.expected)}</td><td class="num">${usd(x.CVaR)}</td></tr>`).join("");
+  return `<div class="result-head">${chip(label, "blue")}${chip("Air capacity " + n0(Number(w.air)) + " units", "blue")}
+    <p class="big">The engine recommends: ${esc(r.best)}</p>
+    <div class="kv"><div style="border-color:${COL.red}"><div class="k">Worst case if we wait (CVaR)</div><div class="v num">${usd(wait.CVaR)}</div></div>
+      <div style="border-color:${COL.green}"><div class="k">Worst case with the plan (CVaR)</div><div class="v num">${usd(best.CVaR)}</div></div>
+      <div style="border-color:${COL.blue}"><div class="k">Plan</div><div class="v num" style="font-size:1.05rem">${n0(best.x_backup)} from the backup, ${n0(best.x_air)} by air</div></div></div>
+    <p class="small-note mb">${esc(notes.join(" "))}${r.n ? ` ${n0(r.n)} scenarios used.` : ""}</p>
+    <div class="scroll"><table class="log"><thead><tr><th>Action</th><th class="num">Backup units</th><th class="num">Air units</th><th class="num">Expected loss</th><th class="num">CVaR</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+}
+function tariffResult() {
+  const w = state.wi, t = D.tariff[`${w.sid}|${w.pct}`], im = t.impact[0], s = supplier(w.sid);
+  const notes = ["Assumes the other suppliers can ship up to their weekly capacity at their current price, plus the surge premium for Mexico City. Contracts, lead times and quality are not counted."];
+  const bk = t.mix.filter(m => m.backup && m.units_cheapest < m.units_now);
+  if (bk.length) notes.push(`The cheapest mix buys less from ${bk[0].supplier}, the only nearby backup, which raises disruption risk.`);
+  if (t.saving_week === 0) notes.push(`No cheaper mix exists, for example because no other supplier makes ${s.component}.`);
+  return `<div class="result-head">${chip(`Price change +${w.pct}% for ${s.id} ${s.city}`, "blue")}
+    <p class="big">Extra cost over ${t.horizon} weeks: ${usd(t.total_extra)}</p>
+    <div class="kv"><div><div class="k">Price per unit</div><div class="v num">${usd2(im.price_now)} to ${usd2(im.price_after)}</div></div>
+      <div><div class="k">Extra cost a week</div><div class="v num">${usd(im.extra_week)}</div></div>
+      <div style="border-color:${COL.green}"><div class="k">Cheapest mix saves</div><div class="v num">${usd(t.saving_week)} a week</div></div></div>
+    <p class="small-note mb">${esc(notes.join(" "))}</p>
+    <div class="scroll"><table class="log"><thead><tr><th>Supplier</th><th>Part</th><th class="num">Price after</th><th class="num">Units a week now</th><th class="num">Cheapest mix</th></tr></thead><tbody>
+    ${t.mix.map(m => `<tr><td>${esc(m.supplier)}</td><td>${esc(m.component)}</td><td class="num">${usd2(m.price_after)}</td><td class="num">${n0(m.units_now)}</td><td class="num"${m.units_cheapest !== m.units_now ? ' style="font-weight:600"' : ""}>${n0(m.units_cheapest)}</td></tr>`).join("")}
+    </tbody></table></div></div>`;
+}
+
+// ---------- about ----------
+function renderAbout() {
+  const roles = [
+    ["Reading news into structured events", "AI, monitoring agent", "The evidence quote is checked word for word against the article by code"],
+    ["Choosing the method: CVaR, VaR, mean variance, Monitor, Abstain or Close", "Code, rules", "Explainable and repeatable"],
+    ["Duration model and scenarios", "Code", "Lognormal fit to past events, tail-weighted stratified sampling"],
+    ["Losses, VaR, CVaR and the optimal plan", "Code", "Rockafellar and Uryasev linear programme"],
+    ["Number of scenarios, verification, sensitivity", "Code", "Doubles scenarios until the answer is stable, then checks itself"],
+    ["Describing scenarios and choosing catalogue actions", "AI, scenario agent", "Only catalogue actions reach the solver"],
+    ["Decision memo", "AI, explanation agent", "Every number is audited against the engine output"],
+    ["Plain-language what-if questions", "AI, full system only", "Turns a question into engine settings. The engine computes"],
+    ["Follow-up messages after approval", "AI, full system only", "The manager reviews and sends"],
+    ["Trust updates and learning from outcomes", "Code", "Simple, transparent rules"]];
+  $("#view-about").innerHTML = `<div class="panel about">
+    <h3>About this demo</h3>
+    <p>This page is a static version of a working prototype of an agentic AI system for supply chain risk management. A fictional company, Nova Electronics in Chicago, buys a controller module from Busan, Manila and Mexico City and a battery pack from Singapore. News arrives day by day from 27 October to 11 November 2026, including a port strike at Busan.</p>
+    <p>For each event the system reads the news, decides which risk method fits, computes the risk with a deterministic engine, verifies the result, explains it, and waits for a manager's decision. The language models handle language only. Every number comes from the engine.</p>
+    <h3>What is live and what is recorded</h3>
+    <p>All numbers on this page were produced by the prototype's R risk engine and saved with the page, including every slider setting in the Risk lab and every combination in the What-if explorer. Text from the AI agents is the recorded output of ${esc(D.meta.agent_model)} from the prototype's runs. Where no output was recorded for a day, the page says so. Nothing on this page calls a language model, a server or an external service, so it keeps working as long as the files exist.</p>
+    <h3>Where AI works and where code works</h3>
+    <div class="scroll"><table class="log"><thead><tr><th>Step</th><th>Done by</th><th>Safeguard</th></tr></thead><tbody>
+      ${roles.map(r => `<tr><td>${esc(r[0])}</td><td>${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join("")}</tbody></table></div>
+    <h3>Terms</h3>
+    <p><strong>VaR</strong> at 95% is the loss that is not exceeded in 95 out of 100 cases. <strong>CVaR</strong> is the average loss in the worst 5 out of 100 cases. <strong>Mean variance</strong> weighs the average loss against its spread.</p>
+    <h3>Limitations</h3>
+    <p>All data is synthetic. The engine counts only safety stock as the buffer, one supplier tier, and no demand changes. Routing and trust rules are fixed rather than learned. The full system reads live news and company data, while this demo replays a fixed set.</p>
+    <h3>How to cite</h3>
+    <pre>[Authors]. Nova risk control panel: static demo of an agentic AI prototype for supply chain risk management. [Year]. [DOI to be added]</pre>
+    <p class="small-note">Generated from the risk engine on ${esc(D.meta.generated)}.</p></div>`;
+}
+
+// ---------- wiring ----------
+function renderView() {
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t.dataset.view === state.view));
+  document.querySelectorAll(".view").forEach(v => v.hidden = v.id !== "view-" + state.view);
+  ({ control: renderControl, news: renderNews, scenarios: renderScenarios, lab: renderLab, decision: renderDecision, whatif: renderWhatIf, about: renderAbout })[state.view]();
+}
+function render() {
+  renderRibbon(); renderPipeline(); renderFigures(); renderView();
+  const cur = $(".day.current"), box = $("#days");
+  if (cur && box.scrollWidth > box.clientWidth) box.scrollLeft = cur.offsetLeft - box.clientWidth / 2;
+}
+function go(i) { state.day = Math.max(0, Math.min(DAYS.length - 1, i)); render(); }
+
+$("#back").onclick = () => go(state.day - 1);
+$("#fwd").onclick = () => go(state.day + 1);
+$("#reset").onclick = () => { state.decided = {}; go(0); };
+$("#days").onclick = ev => { const b = ev.target.closest(".day"); if (b) go(Number(b.dataset.i)); };
+$("#event").onchange = ev => { state.event = ev.target.value; state.lossAction = null; render(); };
+$("#tabs").onclick = ev => { const t = ev.target.closest(".tab"); if (t) { state.view = t.dataset.view; renderView(); } };
+document.addEventListener("click", ev => {
+  const g = ev.target.closest("[data-goto]"); if (g) { ev.preventDefault(); state.view = g.dataset.goto; renderView(); $("#tabs").scrollIntoView({ behavior: "smooth" }); return; }
+  const a = ev.target.closest("[data-alpha]"); if (a) { state.alpha = Number(a.dataset.alpha); renderLab(); return; }
+  const s = ev.target.closest("[data-stress]"); if (s) { state.stress = Number(s.dataset.stress); renderLab(); return; }
+  if (ev.target.id === "record") {
+    const dec = document.querySelector('input[name="dec"]:checked').value;
+    state.decided[key()] = dec === "Approve" ? "approved, " + curEvent().recommended : dec === "Modify" ? "a different action chosen" : "rejected, no action";
+    renderPipeline(); renderDecision();
+  }
+});
+document.addEventListener("change", ev => {
+  const id = ev.target.id, w = state.wi;
+  if (id === "lossAction") { state.lossAction = ev.target.value; renderLab(); }
+  if (id.startsWith("wi-")) { const k = { "wi-sid": "sid", "wi-type": "type", "wi-len": "len", "wi-air": "air", "wi-pct": "pct" }[id]; w[k] = ev.target.value; renderWhatIf(); }
+});
+document.addEventListener("keydown", ev => {
+  if (ev.target.closest("input, select, textarea")) return;
+  if (ev.key === "ArrowRight") go(state.day + 1); if (ev.key === "ArrowLeft") go(state.day - 1);
+});
+const startDay = new URLSearchParams(location.search).get("day");
+const si = startDay ? DAYS.indexOf(startDay) : -1;
+state.view = location.hash === "#about" ? "about" : "control";
+go(si >= 0 ? si : 0);
+</script>
+</body>
+</html>
