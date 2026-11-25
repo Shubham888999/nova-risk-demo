@@ -2,7 +2,7 @@
 
 A static, permanent demo of an agentic AI prototype for supply chain risk management.
 
-**Live demo:** https://USERNAME.github.io/nova-risk-demo/
+**Live demo:** https://Shubham888999.github.io/nova-risk-demo/
 **Archived version (DOI):** to be added after the first Zenodo release
 
 ## What this is
